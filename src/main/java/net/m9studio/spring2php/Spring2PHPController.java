@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 @Component
@@ -18,6 +17,8 @@ import java.util.function.Predicate;
 public class Spring2PHPController {
     @Autowired
     Config config;
+    @Autowired
+    MapperCollect mapperCollect;
 
     ProcedureAddData procedureCookie = null;
     ProcedureAddData procedureParameters = null;
@@ -25,24 +26,12 @@ public class Spring2PHPController {
 
     private final WebClient webClient = WebClient.create();
 
-    public ResponseEntity<String> handle(HttpServletRequest requestHttpServletRequest request, @RequestBody(required = false) String body) {
+    public ResponseEntity<String> handle(HttpServletRequest request, @RequestBody(required = false) String body) {
 
-        String path = request.getRequestURI();
-        String method = request.getMethod();
-        MapperData md = null;
-
-/*
-todo поиск MapperData md и сравнение со всеми доступными
-
-        if(!path.startsWith(config.getRouter())){
+        MapperData md = mapperCollect.search(request);
+        if(md == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        MapperData md = props.getMappers().stream()
-                             .filter(m -> path.equalsIgnoreCase(m.getMapperRouter()) && method.equalsIgnoreCase(m.getMapperType()))
-                             .findFirst()
-                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
-*/
 
         if(accept != null && !accept.test(md)){
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE);
@@ -53,7 +42,6 @@ todo поиск MapperData md и сравнение со всеми доступ
         if(procedureParameters != null){
             procedureParameters.AddData(webClient, md, request);
         }
-
 
         return null;//todo
     }

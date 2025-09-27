@@ -10,4 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class Config {
     private String baseRouter;
     private String phpBaseUrl;
+    private String configPath;
 }

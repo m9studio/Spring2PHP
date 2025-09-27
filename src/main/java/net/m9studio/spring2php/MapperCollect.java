@@ -1,19 +1,48 @@
 package net.m9studio.spring2php;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MapperCollect {
+    @Autowired
     private Config config;
+    @PostConstruct
+    private void init(){
+        config.setConfigPath(replace(config.getConfigPath()));
+        config.setBaseRouter(replace(config.getBaseRouter()));
+        config.setPhpBaseUrl(httpNormalize(replace(config.getPhpBaseUrl())));
+
+        if(config.getConfigPath() == null){
+            //todo runtime
+        }
+        if(config.getBaseRouter() == null){
+            //todo runtime
+        }
+        if(config.getPhpBaseUrl() == null){
+            //todo runtime
+        }
+
+        update();
+    }
+
+
     private List<MapperData> list;
     public MapperData search(HttpServletRequest request){
-        return list.stream()
-                   .filter(row -> row.check(request))
-                   .filter(row -> row.getType() != null/*проверка по аргументам*/)
-                   .findFirst()
-                   .orElse(null);
+        List<MapperData> list = this.list.stream()
+                                         .filter(row -> row.check(request))
+                                         .filter(row -> row.getType() != null/*todo заглушка, проверка по аргументам*/)
+                                         .toList();
+        if(list.isEmpty()){
+            return null;
+        }
+        if(list.size() > 1){
+            //todo runtime не удалось выбрать вызывающий метод
+        }
+        return list.getFirst();
     }
     public void update(){
         List<MapperData> list = new ArrayList();
@@ -50,7 +79,6 @@ public class MapperCollect {
 
         this.list = list;
     }
-
 
     private static String replace(String s){
         if(s == null){
