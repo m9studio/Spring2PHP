@@ -32,9 +32,9 @@ public class MapperCollect {
 
     private List<MapperData> list;
     public MapperData search(HttpServletRequest request){
-        List<MapperData> list = this.list.stream()
+        List<MapperData> list = this.list.parallelStream()
                                          .filter(row -> row.check(request))
-                                         .filter(row -> row.getType() != null/*todo заглушка, проверка по аргументам*/)
+                                         .filter(row -> row.checkParameters(request))
                                          .toList();
         if(list.isEmpty()){
             return null;

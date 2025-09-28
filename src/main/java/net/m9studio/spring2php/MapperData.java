@@ -5,6 +5,8 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
 исключение на type и config параметры, будут в вызывающем методе, а не тут!
@@ -14,6 +16,8 @@ import java.util.List;
 @Getter
 public class MapperData {
     private final List<MapperParameter> listParameters = new ArrayList<>();
+    private final Map<String, MapperParameter> mapParameters = new ConcurrentHashMap<>();
+
 
     private final String type;
 
@@ -68,4 +72,35 @@ public class MapperData {
     public Boolean check(HttpServletRequest request){
         return check(request.getRequestURI(), request.getMethod());
     }
+
+    public Boolean checkParameters(Map<String, String[]> parameters){
+        int count = 0;
+
+        //подсчет всех необязательных параметров
+        for(Map.Entry<String, MapperParameter> entry : mapParameters.entrySet()){
+            if(!entry.getValue().getRequired()){
+                count++;
+            }
+        }
+
+        for(Map.Entry<String, String[]> entry : parameters.entrySet()){
+            if(mapParameters.containsKey(entry.getKey())){
+                MapperParameter md = mapParameters.get(entry.getKey());
+                //todo проверка на типы, если тип не подходит, то return false;
+
+                //если это обязательный параметр, то считаем, необязательные уже были подсчитаны ранее
+                if(md.getRequired()){
+                    count++;
+                }
+            }else{
+                return false;
+            }
+        }
+        //если кол-во необязательных + те что были найдены в обязательных в parameters, не равно mapParameters.size(), то есть расхождение и это не искомый мэппер
+        return count == mapParameters.size();
+    }
+    public Boolean checkParameters(HttpServletRequest request){
+        return checkParameters(request.getParameterMap());
+    }
+
 }
