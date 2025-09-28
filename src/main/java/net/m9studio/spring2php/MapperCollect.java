@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class MapperCollect {
     @Autowired
@@ -30,12 +33,22 @@ public class MapperCollect {
     }
 
 
-    private List<MapperData> list;
+    private Map<String, List<MapperData>> map;
+
+
+
     public MapperData search(HttpServletRequest request){
-        List<MapperData> list = this.list.parallelStream()
-                                         .filter(row -> row.check(request))
-                                         .filter(row -> row.checkParameters(request))
-                                         .toList();
+        List<MapperData> list = map.getOrDefault(request.getRequestURI(), null);
+
+        if(list == null){
+            return null;
+        }
+
+        list = list.stream()
+                   .filter(row -> row.getType().equalsIgnoreCase(request.getMethod()))
+                   .filter(row -> row.checkParameters(request))
+                   .toList();
+
         if(list.isEmpty()){
             return null;
         }
@@ -45,7 +58,7 @@ public class MapperCollect {
         return list.getFirst();
     }
     public void update(){
-        List<MapperData> list = new ArrayList();
+        Map<String, List<MapperData>> map = new ConcurrentHashMap<>();
 
         //todo заполняем из файлов с конфигами
         {
@@ -74,10 +87,16 @@ public class MapperCollect {
 
             //todo заполнение md.list
 
+
+            List<MapperData> list = map.getOrDefault(md.getPath(), null);
+            if(list == null){
+                list = new ArrayList<>();
+                map.put(md.getPath(), list);
+            }
             list.add(md);
         }
 
-        this.list = list;
+        this.map = map;
     }
 
     private static String replace(String s){

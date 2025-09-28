@@ -3,8 +3,6 @@ package net.m9studio.spring2php;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Getter
 public class MapperData {
-    private final List<MapperParameter> listParameters = new ArrayList<>();
     private final Map<String, MapperParameter> mapParameters = new ConcurrentHashMap<>();
 
 
@@ -63,14 +60,14 @@ public class MapperData {
         this.phpUrl = thisPhpUrl;
     }
 
-    public Boolean check(String path, String method){
+    public Boolean checkMethod(String path, String method){
         if(!method.equalsIgnoreCase(type)){
             return false;
         }
         return this.path.equalsIgnoreCase(path);
     }
-    public Boolean check(HttpServletRequest request){
-        return check(request.getRequestURI(), request.getMethod());
+    public Boolean checkMethod(HttpServletRequest request){
+        return checkMethod(request.getRequestURI(), request.getMethod());
     }
 
     public Boolean checkParameters(Map<String, String[]> parameters){
