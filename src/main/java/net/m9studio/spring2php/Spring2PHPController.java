@@ -1,14 +1,18 @@
 package net.m9studio.spring2php;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.function.Predicate;
 
@@ -20,8 +24,8 @@ public class Spring2PHPController {
     @Autowired
     MapperCollect mapperCollect;
 
-    ProcedureAddData procedureCookie = null;
-    ProcedureAddData procedureParameters = null;
+    ProcedureAddData procedure = null;
+
     Predicate<MapperData> accept = null;
 
     private final WebClient webClient = WebClient.create();
@@ -36,11 +40,50 @@ public class Spring2PHPController {
         if(accept != null && !accept.test(md)){
             throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE);
         }
-        if(procedureCookie != null){
-            procedureCookie.AddData(webClient, md, request);
-        }
-        if(procedureParameters != null){
-            procedureParameters.AddData(webClient, md, request);
+
+        WebClient.RequestBodySpec wc = webClient.method(HttpMethod.valueOf(request.getMethod()
+                                                                                  .toUpperCase()))
+                                                .uri(uriBuilder -> {
+                                                    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(md.getPhpUrl());
+
+                                                    request.getParameterMap().forEach((key, values) -> {
+                                                        for (String value : values) {
+                                                            builder.queryParam(key, value);
+                                                        }
+                                                    });
+
+                                                    return builder.build(true).toUri();
+                                                })
+                                                .cookies(c -> {
+                                                    for (Cookie cookie : request.getCookies()) {
+                                                        c.add(cookie.getName(), cookie.getValue());
+                                                    }
+                                                })
+                                                .headers(h -> {
+                                                    String device = request.getHeader("X-Device");
+                                                    if (device != null){
+                                                        h.set("X-Device", device);
+                                                    }
+
+                                                    String client = request.getHeader("X-Client");
+                                                    if (client != null){
+                                                        h.set("X-Client", client);
+                                                    }
+
+                                                    String clientVersion = request.getHeader("X-Client-Version");
+                                                    if (clientVersion != null){
+                                                        h.set("X-Client-Version", clientVersion);
+                                                    }
+
+                                                    String userAgent = request.getHeader("User-Agent");
+                                                    if (userAgent != null) {
+                                                        h.set(HttpHeaders.USER_AGENT, userAgent);
+                                                    }
+                                                });
+
+        //чтобы пользователь аддона, добавлял необходимые ему параметры
+        if(procedure != null){
+            procedure.AddData(wc, md, request);
         }
 
         return null;//todo

@@ -115,7 +115,7 @@ public class MapperCollect {
         if(t.isEmpty()){
             return null;
         }
-        return t;
+        return t.toLowerCase();
     }
     private static String httpNormalize(String s){
         if(s == null){
