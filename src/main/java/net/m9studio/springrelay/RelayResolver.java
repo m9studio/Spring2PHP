@@ -9,22 +9,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MapperCollect {
+public class RelayResolver {
     @Autowired
-    private Config config;
+    private SpringRelayConfig config;
     @PostConstruct
     private void init(){
         config.setConfigPath(replace(config.getConfigPath()));
-        config.setBaseRouter(replace(config.getBaseRouter()));
-        config.setPhpBaseUrl(httpNormalize(replace(config.getPhpBaseUrl())));
+        config.setBasePath(replace(config.getBasePath()));
+        config.setBaseTargetUrl(httpNormalize(replace(config.getBaseTargetUrl())));
 
         if(config.getConfigPath() == null){
             //todo runtime
         }
-        if(config.getBaseRouter() == null){
+        if(config.getBasePath() == null){
             //todo runtime
         }
-        if(config.getPhpBaseUrl() == null){
+        if(config.getBaseTargetUrl() == null){
             //todo runtime
         }
 
@@ -32,19 +32,19 @@ public class MapperCollect {
     }
 
 
-    private Map<String, List<MapperData>> map;
+    private Map<String, List<RelayEntry>> map;
 
 
 
-    public MapperData search(HttpServletRequest request){
-        List<MapperData> list = map.getOrDefault(request.getRequestURI(), null);
+    public RelayEntry search(HttpServletRequest request){
+        List<RelayEntry> list = map.getOrDefault(request.getRequestURI(), null);
 
         if(list == null){
             return null;
         }
 
         list = list.stream()
-                   .filter(row -> row.getType().equalsIgnoreCase(request.getMethod()))
+                   .filter(row -> row.getHttpMethod().equalsIgnoreCase(request.getMethod()))
                    .filter(row -> row.checkParameters(request))
                    .toList();
 
@@ -57,37 +57,54 @@ public class MapperCollect {
         return list.getFirst();
     }
     public void update(){
-        Map<String, List<MapperData>> map = new ConcurrentHashMap<>();
+        Map<String, List<RelayEntry>> map = new ConcurrentHashMap<>();
 
         //todo заполняем из файлов с конфигами
         {
-            String Router     = replace(null);
-            String baseRouter = replace(null);
-            String fullRouter = replace(null);
-            if(Router == null && fullRouter == null){
+            String path     = replace(null);
+            String basePath = replace(null);
+            String fullPath = replace(null);
+            if(path == null && fullPath == null){
                 //todo runtime
             }
 
-            String phpUrl     = replace(null);
-            String phpBaseUrl = httpNormalize(replace(null));
-            String phpFullUrl = httpNormalize(replace(null));
-            if(phpUrl == null && phpFullUrl == null){
+            String targetUrl     = replace(null);
+            String baseTargetUrl = httpNormalize(replace(null));
+            String fullTargetUrl = httpNormalize(replace(null));
+            if(targetUrl == null && fullTargetUrl == null){
                 //todo runtime
             }
 
-            String type = null;
-            if(type == null){
+            String httpMethod = null;
+            if(httpMethod == null){
                 //todo runtime
             }
 
-            MapperData md = new MapperData(Router, baseRouter, fullRouter,
-                                           phpUrl, phpBaseUrl, phpFullUrl,
-                                           type, config.getBaseRouter(), config.getPhpBaseUrl());
+
+            String thisPath = fullPath;
+            if(thisPath == null){
+                thisPath = basePath;
+                if(thisPath == null){
+                    thisPath = config.getBasePath();
+                }
+                thisPath += "/" + path;
+            }
+
+            String thisTargetUrl = fullTargetUrl;
+            if(thisTargetUrl == null){
+                thisTargetUrl = baseTargetUrl;
+                if(thisTargetUrl == null){
+                    thisTargetUrl = config.getBaseTargetUrl();
+                }
+                thisTargetUrl += "/" + targetUrl;
+            }
+
+            RelayEntry md = new RelayEntry(httpMethod, thisPath, thisTargetUrl);
 
             //todo заполнение md.list
 
 
-            List<MapperData> list = map.getOrDefault(md.getPath(), null);
+            List<RelayEntry> list = map.getOrDefault(md.getPath(), null);
             if(list == null){
                 list = new ArrayList<>();
                 map.put(md.getPath(), list);

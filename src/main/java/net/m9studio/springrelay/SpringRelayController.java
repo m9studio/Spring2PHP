@@ -20,19 +20,19 @@ import java.util.function.Predicate;
 @RequiredArgsConstructor
 public class SpringRelayController {
     @Autowired
-    Config config;
+    SpringRelayConfig config;
     @Autowired
-    MapperCollect mapperCollect;
+    RelayResolver mapperCollect;
 
     ProcedureAddData procedure = null;
 
-    Predicate<MapperData> accept = null;
+    Predicate<RelayEntry> accept = null;
 
     private final WebClient webClient = WebClient.create();
 
     public ResponseEntity<String> handle(HttpServletRequest request, @RequestBody(required = false) String body) {
 
-        MapperData md = mapperCollect.search(request);
+        RelayEntry md = mapperCollect.search(request);
         if(md == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }

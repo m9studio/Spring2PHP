@@ -5,5 +5,5 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @FunctionalInterface
 public interface ProcedureAddData {
-    void AddData(WebClient.RequestBodySpec webClient, MapperData mapperData, HttpServletRequest request);
+    void AddData(WebClient.RequestBodySpec webClient, RelayEntry mapperData, HttpServletRequest request);
 }
