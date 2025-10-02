@@ -1,10 +1,10 @@
-package net.m9studio.spring2php;
+package net.m9studio.springrelay;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class Spring2PhpApplicationTests {
+class SpringRelayApplicationTests {
 
 	@Test
 	void contextLoads() {

@@ -1,4 +1,4 @@
-package net.m9studio.spring2php;
+package net.m9studio.springrelay;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class MapperCollect {
     @Autowired

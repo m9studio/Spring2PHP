@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.m9studio</groupId>
-	<artifactId>spring2php</artifactId>
+	<artifactId>springrelay</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Spring2PHP</name>
+	<name>SpringRelay</name>
 	<description>Bridge layer between Java Spring and PHP services with dynamic configuration.</description>
 	<url/>
 	<licenses>

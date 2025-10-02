@@ -1,4 +1,4 @@
-package net.m9studio.spring2php;
+package net.m9studio.springrelay;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;

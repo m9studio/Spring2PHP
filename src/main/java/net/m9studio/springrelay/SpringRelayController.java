@@ -1,4 +1,4 @@
-package net.m9studio.spring2php;
+package net.m9studio.springrelay;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 
 @Component
 @RequiredArgsConstructor
-public class Spring2PHPController {
+public class SpringRelayController {
     @Autowired
     Config config;
     @Autowired
