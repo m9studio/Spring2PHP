@@ -16,4 +16,6 @@ public class SpringRelayConfig {
     private String baseTargetUrl;
     @NotNull
     private String configPath;
+
+    private boolean ignoreInvalidEntries = false;
 }

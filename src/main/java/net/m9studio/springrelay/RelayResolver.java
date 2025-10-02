@@ -17,17 +17,18 @@ public class RelayResolver {
         config.setConfigPath(replace(config.getConfigPath()));
         config.setBasePath(replace(config.getBasePath()));
         config.setBaseTargetUrl(httpNormalize(replace(config.getBaseTargetUrl())));
+/* todo проверит, что @NotNull делегирует эту проверку на себя
 
         if(config.getConfigPath() == null){
-            //todo runtime
+            // runtime
         }
         if(config.getBasePath() == null){
-            //todo runtime
+            // runtime
         }
         if(config.getBaseTargetUrl() == null){
-            //todo runtime
+            // runtime
         }
-
+*/
         update();
     }
 
@@ -60,24 +61,39 @@ public class RelayResolver {
         Map<String, List<RelayEntry>> map = new ConcurrentHashMap<>();
 
         //todo заполняем из файлов с конфигами
-        {
+        while ("todo дописать выборку из файла" == null){
             String path     = replace(null);
             String basePath = replace(null);
             String fullPath = replace(null);
             if(path == null && fullPath == null){
-                //todo runtime
+                if(config.isIgnoreInvalidEntries()){
+                    //todo runtime
+                    continue;
+                }else{
+                    //todo log
+                }
             }
 
             String targetUrl     = replace(null);
             String baseTargetUrl = httpNormalize(replace(null));
             String fullTargetUrl = httpNormalize(replace(null));
             if(targetUrl == null && fullTargetUrl == null){
-                //todo runtime
+                if(config.isIgnoreInvalidEntries()){
+                    //todo runtime
+                    continue;
+                }else{
+                    //todo log
+                }
             }
 
             String httpMethod = null;
             if(httpMethod == null){
-                //todo runtime
+                if(config.isIgnoreInvalidEntries()){
+                    //todo runtime
+                    continue;
+                }else{
+                    //todo log
+                }
             }
 
 
