@@ -25,6 +25,10 @@ public class RelayEntry {
         this.targetUrl = targetUrl;
     }
 
+    public void addParameter(RelayParameter parameter){
+        mapParameters.put(parameter.getName().toLowerCase(), parameter);
+    }
+
     public Boolean checkParameters(Map<String, String[]> parameters){
         int count = 0;
 
@@ -54,5 +58,4 @@ public class RelayEntry {
     public Boolean checkParameters(HttpServletRequest request){
         return checkParameters(request.getParameterMap());
     }
-
 }

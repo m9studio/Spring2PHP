@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,6 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.function.Predicate;
 
 @Component
+@Service
 @RequiredArgsConstructor
 public class SpringRelayController {
     @Autowired
@@ -44,7 +46,7 @@ public class SpringRelayController {
         WebClient.RequestBodySpec wc = webClient.method(HttpMethod.valueOf(request.getMethod()
                                                                                   .toUpperCase()))
                                                 .uri(uriBuilder -> {
-                                                    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(md.getPhpUrl());
+                                                    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(md.getTargetUrl());
 
                                                     request.getParameterMap().forEach((key, values) -> {
                                                         for (String value : values) {

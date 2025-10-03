@@ -3,12 +3,16 @@ package net.m9studio.springrelay;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component
+@Service
 public class RelayResolver {
     @Autowired
     private SpringRelayConfig config;
@@ -17,18 +21,7 @@ public class RelayResolver {
         config.setConfigPath(replace(config.getConfigPath()));
         config.setBasePath(replace(config.getBasePath()));
         config.setBaseTargetUrl(httpNormalize(replace(config.getBaseTargetUrl())));
-/* todo проверит, что @NotNull делегирует эту проверку на себя
 
-        if(config.getConfigPath() == null){
-            // runtime
-        }
-        if(config.getBasePath() == null){
-            // runtime
-        }
-        if(config.getBaseTargetUrl() == null){
-            // runtime
-        }
-*/
         update();
     }
 
@@ -53,7 +46,11 @@ public class RelayResolver {
             return null;
         }
         if(list.size() > 1){
-            //todo runtime не удалось выбрать вызывающий метод
+            if(config.isFailOnMultipleMatches()){
+                //todo runtime не удалось выбрать вызывающий метод
+            }else{
+                //todo log
+            }
         }
         return list.getFirst();
     }
