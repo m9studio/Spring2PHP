@@ -2,17 +2,20 @@ package net.m9studio.springrelay;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import net.m9studio.springrelay.exception.ConfigPathNotFoundException;
+import net.m9studio.springrelay.exception.InvalidEntryException;
+import net.m9studio.springrelay.exception.MultipleMatchesException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-@Service
 public class RelayResolver {
     @Autowired
     private SpringRelayConfig config;
@@ -47,7 +50,8 @@ public class RelayResolver {
         }
         if(list.size() > 1){
             if(config.isFailOnMultipleMatches()){
-                //todo runtime не удалось выбрать вызывающий метод
+                //не удалось выбрать вызывающий метод
+                throw new MultipleMatchesException(request.getRequestURI(), request.getMethod(), list.size());
             }else{
                 //todo log
             }
@@ -57,17 +61,26 @@ public class RelayResolver {
     public void update(){
         Map<String, List<RelayEntry>> map = new ConcurrentHashMap<>();
 
+        File folder = new File(config.getConfigPath());
+        if (folder.exists() && folder.isDirectory()) {
+            //папка есть
+        } else {
+            //todo later исключение, что папки нет.... или не стоит и создать папку самим????
+            throw new ConfigPathNotFoundException(config.getConfigPath());
+        }
+
         //todo заполняем из файлов с конфигами
+
         while ("todo дописать выборку из файла" == null){
             String path     = replace(null);
             String basePath = replace(null);
             String fullPath = replace(null);
             if(path == null && fullPath == null){
                 if(config.isIgnoreInvalidEntries()){
-                    //todo runtime
+                    //todo log
                     continue;
                 }else{
-                    //todo log
+                    throw new InvalidEntryException("missing path/fullPath");
                 }
             }
 
@@ -76,20 +89,20 @@ public class RelayResolver {
             String fullTargetUrl = httpNormalize(replace(null));
             if(targetUrl == null && fullTargetUrl == null){
                 if(config.isIgnoreInvalidEntries()){
-                    //todo runtime
+                    //todo log
                     continue;
                 }else{
-                    //todo log
+                    throw new InvalidEntryException("missing targetUrl/fullTargetUrl");
                 }
             }
 
             String httpMethod = null;
             if(httpMethod == null){
                 if(config.isIgnoreInvalidEntries()){
-                    //todo runtime
+                    //todo log
                     continue;
                 }else{
-                    //todo log
+                    throw new InvalidEntryException("missing httpMethod");
                 }
             }
 
