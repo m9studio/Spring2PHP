@@ -7,9 +7,14 @@ import net.m9studio.springrelay.exception.InvalidEntryException;
 import net.m9studio.springrelay.exception.MultipleMatchesException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,83 +66,138 @@ public class RelayResolver {
         Map<String, List<RelayEntry>> map = new ConcurrentHashMap<>();
 
         File folder = new File(config.getConfigPath());
-        if (folder.exists() && folder.isDirectory()) {
-            //папка есть
-        } else {
+        if (!folder.exists() || !folder.isDirectory()) {
             //todo later исключение, что папки нет.... или не стоит и создать папку самим????
             throw new ConfigPathNotFoundException(config.getConfigPath());
         }
 
-        //todo заполняем из файлов с конфигами
+        File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
+        if (files != null) {
+            Yaml yaml = new Yaml();
+            for (File file : files) {
 
-        while ("todo дописать выборку из файла" == null){
-            String path     = replace(null);
-            String basePath = replace(null);
-            String fullPath = replace(null);
-            if(path == null && fullPath == null){
-                if(config.isIgnoreInvalidEntries()){
-                    //todo log
+                Object rawRows;
+                try(FileInputStream fis = new FileInputStream(file)){
+                    rawRows = yaml.load(fis);
+                } catch (IOException e) {
+                    handleInvalid(e.getMessage());
                     continue;
-                }else{
-                    throw new InvalidEntryException("missing path/fullPath");
                 }
-            }
 
-            String targetUrl     = replace(null);
-            String baseTargetUrl = httpNormalize(replace(null));
-            String fullTargetUrl = httpNormalize(replace(null));
-            if(targetUrl == null && fullTargetUrl == null){
-                if(config.isIgnoreInvalidEntries()){
-                    //todo log
+                List<Object> listRawRows;
+                if(rawRows instanceof List<?>){
+                    listRawRows = (List<Object>)rawRows;
+                }else{
+                    handleInvalid("YAML root in file '" + file.getName() + "' must be a list of mappings");
                     continue;
-                }else{
-                    throw new InvalidEntryException("missing targetUrl/fullTargetUrl");
+                }
+
+
+
+                for(Object rawRow : listRawRows){
+                    Map<String, Object> mapRow = new HashMap<>();
+                    if(rawRow instanceof Map<?, ?>){
+                        Map<Object, Object> mapRawRow = (Map<Object, Object>)rawRow;
+                        for(Map.Entry<Object, Object> entry : mapRawRow.entrySet()){
+                            mapRow.put(entry.getKey().toString(), entry.getValue());
+                        }
+                    }else{
+                        handleInvalid("YAML element in file '" + file.getName() + "' is not a mapping (expected key-value pairs)");
+                        continue;
+                    }
+
+                    String path     = replace(mapRow.getOrDefault("path", "").toString());
+                    String basePath = replace(mapRow.getOrDefault("base-path", "").toString());
+                    String fullPath = replace(mapRow.getOrDefault("full-path", "").toString());
+                    if(path == null && fullPath == null){
+                        handleInvalid("missing path/fullPath");
+                        continue;
+                    }
+                    String thisPath = fullPath;
+                    if(thisPath == null){
+                        thisPath = basePath;
+                        if(thisPath == null){
+                            thisPath = config.getBasePath();
+                        }
+                        thisPath += "/" + path;
+                    }
+
+                    String targetUrl     = replace(mapRow.getOrDefault("target-url", "").toString());
+                    String baseTargetUrl = replace(mapRow.getOrDefault("base-target-url", "").toString());
+                    String fullTargetUrl = replace(mapRow.getOrDefault("full-target-url", "").toString());
+                    if(targetUrl == null && fullTargetUrl == null){
+                        handleInvalid("missing targetUrl/fullTargetUrl");
+                        continue;
+                    }
+                    String thisTargetUrl = fullTargetUrl;
+                    if(thisTargetUrl == null){
+                        thisTargetUrl = baseTargetUrl;
+                        if(thisTargetUrl == null){
+                            thisTargetUrl = config.getBaseTargetUrl();
+                        }
+                        thisTargetUrl += "/" + targetUrl;
+                    }
+
+                    String httpMethod = replace(mapRow.getOrDefault("method", "").toString());
+                    if(httpMethod == null){
+                        handleInvalid("missing httpMethod");
+                        continue;
+                    }
+
+                    RelayEntry md = new RelayEntry(httpMethod, thisPath, thisTargetUrl);
+
+                    Object rawParams = mapRow.getOrDefault("parameters", null);
+                    List<Map<String, String>> listParameters = null;
+
+
+                    if(rawParams instanceof List<?> listParams){
+                        for (Object item : listParams) {
+                            if (!(item instanceof Map<?, ?> mapParams)) {
+                                handleInvalid("'parameters' contains non-map item");
+                                continue;
+                            }
+
+                        }
+                    }else{
+
+                    }
+
+
+                    if(objectParameters != null){
+                        try{
+                            listParameters = (List<Map<String, String>>)objectParameters;
+                        }catch (Exception e){
+                            handleInvalid(e.getMessage());
+                            continue;
+                        }
+                    }
+
+                    if(listParameters != null){
+                        //todo заполнение md.list
+
+                    }
+
+
+
+                    List<RelayEntry> list = map.getOrDefault(md.getPath(), null);
+                    if(list == null){
+                        list = new ArrayList<>();
+                        map.put(md.getPath(), list);
+                    }
+                    list.add(md);
                 }
             }
-
-            String httpMethod = null;
-            if(httpMethod == null){
-                if(config.isIgnoreInvalidEntries()){
-                    //todo log
-                    continue;
-                }else{
-                    throw new InvalidEntryException("missing httpMethod");
-                }
-            }
-
-
-            String thisPath = fullPath;
-            if(thisPath == null){
-                thisPath = basePath;
-                if(thisPath == null){
-                    thisPath = config.getBasePath();
-                }
-                thisPath += "/" + path;
-            }
-
-            String thisTargetUrl = fullTargetUrl;
-            if(thisTargetUrl == null){
-                thisTargetUrl = baseTargetUrl;
-                if(thisTargetUrl == null){
-                    thisTargetUrl = config.getBaseTargetUrl();
-                }
-                thisTargetUrl += "/" + targetUrl;
-            }
-
-            RelayEntry md = new RelayEntry(httpMethod, thisPath, thisTargetUrl);
-
-            //todo заполнение md.list
-
-
-            List<RelayEntry> list = map.getOrDefault(md.getPath(), null);
-            if(list == null){
-                list = new ArrayList<>();
-                map.put(md.getPath(), list);
-            }
-            list.add(md);
         }
 
         this.map = map;
+    }
+
+    private void handleInvalid(String reason) {
+        if (config.isIgnoreInvalidEntries()) {
+            //todo log.warn("Ignoring invalid entry: {}", reason);
+        } else {
+            throw new InvalidEntryException(reason);
+        }
     }
 
     private static String replace(String s){

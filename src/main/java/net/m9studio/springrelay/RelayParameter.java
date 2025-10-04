@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Map;
+import java.util.function.Function;
 
 
 @Getter
@@ -96,7 +97,7 @@ public class RelayParameter {
         );
     }
 
-    private <T> boolean parseCheck(String value, java.util.function.Function<String, T> parser) {
+    private <T> boolean parseCheck(String value, Function<String, T> parser) {
         if (value == null || value.isEmpty()) return false;
         try {
             parser.apply(value.trim());
