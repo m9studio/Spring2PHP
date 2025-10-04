@@ -6,7 +6,6 @@ import net.m9studio.springrelay.exception.ConfigPathNotFoundException;
 import net.m9studio.springrelay.exception.InvalidEntryException;
 import net.m9studio.springrelay.exception.MultipleMatchesException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -15,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
+@Service
 public class RelayResolver {
     @Autowired
     private SpringRelayConfig config;
@@ -42,7 +41,7 @@ public class RelayResolver {
 
         list = list.stream()
                    .filter(row -> row.getHttpMethod().equalsIgnoreCase(request.getMethod()))
-                   .filter(row -> row.checkParameters(request))
+                   .filter(row -> row.checkParameters(request))//todo проверка на передаваемые файлы, если есть
                    .toList();
 
         if(list.isEmpty()){
