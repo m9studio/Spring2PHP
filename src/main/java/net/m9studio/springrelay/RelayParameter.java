@@ -49,16 +49,16 @@ public class RelayParameter {
 
     private boolean check(String value){
         //todo стоит ли добавлять unsigned number и все подтипы?
-        //todo стоит ли делать разные названия типов, типа i int integer и тп?
+
         return switch (type) {
             case "any", "string" -> true;
-            case "byte" -> isByte(value);
-            case "short" -> isShort(value);
-            case "int" -> isInt(value);
-            case "long" -> isLong(value);
-            case "float" -> isFloat(value);
-            case "double" -> isDouble(value);
-            case "boolean" -> isBoolean(value);
+            case "b", "byte" -> isByte(value);
+            case "s", "short" -> isShort(value);
+            case "i", "int", "integer" -> isInt(value);
+            case "l", "long" -> isLong(value);
+            case "f", "float" -> isFloat(value);
+            case "d", "double" -> isDouble(value);
+            case "bool", "boolean" -> isBoolean(value);
             case "number" -> isNumber(value);
             default -> false;
         };
