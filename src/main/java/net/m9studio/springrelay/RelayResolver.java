@@ -11,7 +11,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -84,33 +83,31 @@ public class RelayResolver {
                     continue;
                 }
 
-                List<Object> listRawRows;
-                if(rawRows instanceof List<?>){
-                    listRawRows = (List<Object>)rawRows;
-                }else{
+
+                if(!(rawRows instanceof List<?>)){
                     handleInvalid("YAML root in file '" + file.getName() + "' must be a list of mappings");
                     continue;
                 }
+                List<Object> listRawRows = (List<Object>)rawRows;
 
 
 
                 for(Object rawRow : listRawRows){
-                    Map<String, Object> mapRow = new HashMap<>();
-                    if(rawRow instanceof Map<?, ?>){
-                        Map<Object, Object> mapRawRow = (Map<Object, Object>)rawRow;
-                        for(Map.Entry<Object, Object> entry : mapRawRow.entrySet()){
-                            mapRow.put(entry.getKey().toString(), entry.getValue());
-                        }
-                    }else{
+                    if(!(rawRow instanceof Map<?, ?>)){
                         handleInvalid("YAML element in file '" + file.getName() + "' is not a mapping (expected key-value pairs)");
                         continue;
+                    }
+
+                    Map<String, Object> mapRow = new HashMap<>();
+                    for(Map.Entry<Object, Object> entry : ((Map<Object, Object>)rawRow).entrySet()){
+                        mapRow.put(entry.getKey().toString(), entry.getValue());
                     }
 
                     String path     = replace(mapRow.getOrDefault("path", "").toString());
                     String basePath = replace(mapRow.getOrDefault("base-path", "").toString());
                     String fullPath = replace(mapRow.getOrDefault("full-path", "").toString());
                     if(path == null && fullPath == null){
-                        handleInvalid("missing path/fullPath");
+                        handleInvalid("missing path/fullPath in file '" + file.getName() + "'");
                         continue;
                     }
                     String thisPath = fullPath;
@@ -126,7 +123,7 @@ public class RelayResolver {
                     String baseTargetUrl = replace(mapRow.getOrDefault("base-target-url", "").toString());
                     String fullTargetUrl = replace(mapRow.getOrDefault("full-target-url", "").toString());
                     if(targetUrl == null && fullTargetUrl == null){
-                        handleInvalid("missing targetUrl/fullTargetUrl");
+                        handleInvalid("missing targetUrl/fullTargetUrl in file '" + file.getName() + "'");
                         continue;
                     }
                     String thisTargetUrl = fullTargetUrl;
@@ -140,51 +137,58 @@ public class RelayResolver {
 
                     String httpMethod = replace(mapRow.getOrDefault("method", "").toString());
                     if(httpMethod == null){
-                        handleInvalid("missing httpMethod");
+                        handleInvalid("missing httpMethod in file '" + file.getName() + "'");
                         continue;
                     }
 
-                    RelayEntry md = new RelayEntry(httpMethod, thisPath, thisTargetUrl);
+                    RelayEntry relayEntry = new RelayEntry(httpMethod, thisPath, thisTargetUrl);
 
                     Object rawParams = mapRow.getOrDefault("parameters", null);
-                    List<Map<String, String>> listParameters = null;
+                    //List<Map<String, String>> listParameters = null;
 
-
-                    if(rawParams instanceof List<?> listParams){
-                        for (Object item : listParams) {
-                            if (!(item instanceof Map<?, ?> mapParams)) {
-                                handleInvalid("'parameters' contains non-map item");
-                                continue;
-                            }
-
-                        }
-                    }else{
-
-                    }
-
-
-                    if(objectParameters != null){
-                        try{
-                            listParameters = (List<Map<String, String>>)objectParameters;
-                        }catch (Exception e){
-                            handleInvalid(e.getMessage());
+                    if(rawParams != null){
+                        if(!(rawParams instanceof List<?>)) {
+                            handleInvalid("'parameters' не список in file '" + file.getName() + "'");
                             continue;
                         }
+                        for (Object rawItem : (List<Object>)rawParams) {
+                            if (!(rawItem instanceof Map<?, ?> mapParams)) {
+                                handleInvalid("'parameters' contains non-map item in file '" + file.getName() + "'");
+                                break; //continue;//todo как выйти из вложенного цикла? goto или breakpoint?
+                            }
+                            Map<String, Object> item = new HashMap<>();
+                            for(Map.Entry<Object, Object> entry : ((Map<Object, Object>)mapParams).entrySet()){
+                                item.put(entry.getKey().toString(), entry.getValue());
+                            }
+
+                            Object oType = item.getOrDefault("type", null);
+                            Object oName = item.getOrDefault("name", null);
+                            Object oRequired = item.getOrDefault("required", null);
+
+                            if(oType == null || oName == null || oRequired == null){
+                                //todo распарелилть на более подробную ошибку?
+                                handleInvalid("параметр неверный in file '" + file.getName() + "'");
+                                break; //continue;//todo как выйти из вложенного цикла? goto или breakpoint?
+                            }
+
+                            //todo парсинг
+
+                            RelayParameter rp = new RelayParameter();
+
+                            relayEntry.addParameter(rp);
+                        }
+
+
                     }
 
-                    if(listParameters != null){
-                        //todo заполнение md.list
-
-                    }
 
 
-
-                    List<RelayEntry> list = map.getOrDefault(md.getPath(), null);
+                    List<RelayEntry> list = map.getOrDefault(relayEntry.getPath(), null);
                     if(list == null){
                         list = new ArrayList<>();
-                        map.put(md.getPath(), list);
+                        map.put(relayEntry.getPath(), list);
                     }
-                    list.add(md);
+                    list.add(relayEntry);
                 }
             }
         }
