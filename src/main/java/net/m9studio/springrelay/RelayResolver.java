@@ -2,22 +2,20 @@ package net.m9studio.springrelay;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import net.m9studio.springrelay.config.SpringRelayConfig;
 import net.m9studio.springrelay.exception.ConfigPathNotFoundException;
 import net.m9studio.springrelay.exception.InvalidEntryException;
 import net.m9studio.springrelay.exception.MultipleMatchesException;
+import net.m9studio.springrelay.config.model.Entry;
+import net.m9studio.springrelay.config.loader.EntryLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
@@ -67,13 +65,21 @@ public class RelayResolver {
         Map<String, List<RelayEntry>> map = new ConcurrentHashMap<>();
         Pattern pattern = Pattern.compile("^(?:array\\[(.+?)\\]|(.+))$");
 
-        File folder = new File(config.getConfigPath());
-        if (!folder.exists() || !folder.isDirectory()) {
+        File configDir = new File(config.getConfigPath());
+        if (!configDir.exists() || !configDir.isDirectory()) {
             //todo later исключение, что папки нет.... или не стоит и создать папку самим????
             throw new ConfigPathNotFoundException(config.getConfigPath());
         }
 
-        File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
+        EntryLoader loader = new EntryLoader();
+        try {
+            List<Entry> entries = loader.loadAllFromDir(configDir);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+/*
+        File[] files = configDir.listFiles((dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
         if (files != null) {
             Yaml yaml = new Yaml();
 
@@ -212,7 +218,7 @@ public class RelayResolver {
                     list.add(relayEntry);
                 }
             }
-        }
+        }*/
 
         this.map = map;
     }

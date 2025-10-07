@@ -2,6 +2,7 @@ package net.m9studio.springrelay;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import net.m9studio.springrelay.config.SpringRelayConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;

@@ -1,4 +1,4 @@
-package net.m9studio.springrelay;
+package net.m9studio.springrelay.config;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
