@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class RelayResolver {
@@ -63,6 +65,7 @@ public class RelayResolver {
     }
     public void update(){
         Map<String, List<RelayEntry>> map = new ConcurrentHashMap<>();
+        Pattern pattern = Pattern.compile("^(?:array\\[(.+?)\\]|(.+))$");
 
         File folder = new File(config.getConfigPath());
         if (!folder.exists() || !folder.isDirectory()) {
@@ -73,6 +76,8 @@ public class RelayResolver {
         File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
         if (files != null) {
             Yaml yaml = new Yaml();
+
+            cycleFile:
             for (File file : files) {
 
                 Object rawRows;
@@ -91,7 +96,7 @@ public class RelayResolver {
                 List<Object> listRawRows = (List<Object>)rawRows;
 
 
-
+                cycleEntry:
                 for(Object rawRow : listRawRows){
                     if(!(rawRow instanceof Map<?, ?>)){
                         handleInvalid("YAML element in file '" + file.getName() + "' is not a mapping (expected key-value pairs)");
@@ -144,17 +149,17 @@ public class RelayResolver {
                     RelayEntry relayEntry = new RelayEntry(httpMethod, thisPath, thisTargetUrl);
 
                     Object rawParams = mapRow.getOrDefault("parameters", null);
-                    //List<Map<String, String>> listParameters = null;
 
                     if(rawParams != null){
                         if(!(rawParams instanceof List<?>)) {
-                            handleInvalid("'parameters' не список in file '" + file.getName() + "'");
+                            handleInvalid("'parameters' must be a list of maps in file '" + file.getName() + "'");
                             continue;
                         }
+                        cycleParameter:
                         for (Object rawItem : (List<Object>)rawParams) {
                             if (!(rawItem instanceof Map<?, ?> mapParams)) {
                                 handleInvalid("'parameters' contains non-map item in file '" + file.getName() + "'");
-                                break; //continue;//todo как выйти из вложенного цикла? goto или breakpoint?
+                                continue cycleEntry;
                             }
                             Map<String, Object> item = new HashMap<>();
                             for(Map.Entry<Object, Object> entry : ((Map<Object, Object>)mapParams).entrySet()){
@@ -166,21 +171,37 @@ public class RelayResolver {
                             Object oRequired = item.getOrDefault("required", null);
 
                             if(oType == null || oName == null || oRequired == null){
-                                //todo распарелилть на более подробную ошибку?
-                                handleInvalid("параметр неверный in file '" + file.getName() + "'");
-                                break; //continue;//todo как выйти из вложенного цикла? goto или breakpoint?
+                                handleInvalid("parameter missing type/name/required in file '" + file.getName() + "'");
+                                continue cycleEntry;
                             }
 
-                            //todo парсинг
-
                             RelayParameter rp = new RelayParameter();
+
+                            rp.setName(oName.toString().toLowerCase());
+                            rp.setRequired(oRequired.toString().equalsIgnoreCase("true"));
+                            Matcher m = pattern.matcher(oType.toString().toLowerCase());
+
+                            if (m.find()) {
+                                if (m.group(1) != null) {
+                                    // Совпадение с array[...]
+                                    rp.setType(m.group(1));
+                                    rp.setArray(true);
+                                } else {
+                                    // Просто текст
+                                    rp.setType(m.group(2));
+                                    rp.setArray(false);
+                                }
+                            }else{
+                                //todo распарелилть на более подробную ошибку?
+                                handleInvalid("invalid 'type' in parameter in file '" + file.getName() + "'");
+                                continue cycleEntry;
+                            }
 
                             relayEntry.addParameter(rp);
                         }
 
 
                     }
-
 
 
                     List<RelayEntry> list = map.getOrDefault(relayEntry.getPath(), null);
